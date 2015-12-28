@@ -1,0 +1,62 @@
+x100
+----
+Look at JPEG files. We should be able to find out there length and then look in the
+neighbourhood of them.
+The JPEGs are in blocks of 0x18000 bytes
+00800100 occurs in many places in the firmware
+
+There are lots of 16-bit strings
+i386-mingw32-strings -el FPUPDATE-x100-1.20.DAT.xor
+
+there's arm looking code around 0x2825c
+arm-elf-objdump -b binary -m armv5te -D ../FPUPDATE-x100-1.20.DAT.xor
+
+The code around 288f0 is even more solid. You can see clear function
+beginings and ends.
+
+differences between 1.10 and 1.20
+0x200
+0x240
+0x88260 - It seems like there could be a bunch of 16 bit or larger little endian words
+that are adjusted. The differences are always pairs of bytes and the first byte is
+adjusted more than the second one. 
+0x8a680 - lots of difference. But in reality it's just offset by 4 bytes
+0x8aef1 theres's a bunch of extra bytes in 1.10
+
+1.10 -> 1.20 byte location mappings
+-----------------------------------
+569097 -> 569077
+569245 -> 569153
+569656 -> 569604
+569950 -> 570190
+570206 -> 570674
+570453 -> 570921 - there are offsets that are all 0x29 around here (the fields are at least larger than 8 bits)
+
+16850677 -> 16851205
+33701514 -> 33701514
+23701483 -> 23701483
+13701478 -> 13702586
+18701476 -> 18702448
+19909937 -> 19910921
+19956317 -> 19956317 - everything seems equal after this point except for a couple of byte
+at the end. This happens in a different place between 1.20 -> 1.30
+
+hexdump -v -e '1/1 "%02x"' -e '"\n"' FPUPDATE-x100-1.20.DAT > /tmp/b.all
+
+Starting at ____ there are duplicated lines that have a stride of 512 bytes.
+If you shift things to starting at this place there seems to be a 512 byte alignment
+These duplicated bytes end at 32768
+
+There's a block of data that starts at 163840 and goes to 174080 = 0x2800
+229376 - 239616
+
+very similar code at 0x28000 and 0x38000
+The code ends at 0x28300 and this where a section of difference between 0x28000 and 0x38000
+are.
+Code begins again at 0x28694. code stops at 0x2a75c
+
+
+Code looking stuff around 0x48000 to 0x555400
+0x1080000
+
+There are a bunch of <UNDEFINED> instructions that tend to start with 0xe7
